@@ -10,15 +10,17 @@ except Exception as e:
     sys.path.append(os.getcwd())
     from param import PARAM
 
+from utils import pathUtils
 import pymongo
-from pymongo import MongoClient
 import json
+
 
 class CrawlerDB:
     def __init__(self, db_name, collection_name):
-        with open(PARAM.MONGODB_INFO_FILENAME) as f:
+        path = os.path.join(pathUtils.GetGlobalConfigFolderPath(), PARAM.MONGODB_INFO_FILENAME)
+        with open(path) as f:
             mongo_info = json.load(f)
-        self.client = MongoClient(mongo_info['url'], mongo_info['port'])
+        self.client = pymongo.MongoClient(mongo_info['url'], mongo_info['port'])
         if not self.client[db_name].authenticate(
                 mongo_info['username'],
                 mongo_info['password']):

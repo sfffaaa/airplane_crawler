@@ -9,10 +9,10 @@ import os
 import sys
 
 try:
-    from param import PARAM
+    from utils import pathUtils
 except Exception as e:
     sys.path.append(os.getcwd())
-    from param import PARAM
+    from utils import pathUtils
 
 
 PROXY_URL = 'http://gatherproxy.com/proxylist/country/?c='
@@ -57,7 +57,8 @@ def _GetHighProbabilityProxyDict(filename):
     """
     proxy_dict = {}
     try:
-        with open(os.path.join(PARAM.PROXY_FOLDER, filename)) as f:
+        path = pathUtils.GetCrawlerTmpFolderPath()
+        with open(os.path.join(path, filename)) as f:
             proxy_dict = json.load(f)
     except Exception as e:
         logging.debug(e)
@@ -79,12 +80,13 @@ def _WriteHighProbabilityProxyList(proxy_dict, filename):
         >>> _WriteHighProbabilityProxyList({"104.196.34.46:80": 3, "128.199.229.21:3128": 2}, "proxy.jet")
     """
     try:
-        os.mkdir(PARAM.PROXY_FOLDER)
+        path = pathUtils.GetCrawlerTmpFolderPath()
+        os.mkdir(path)
     except Exception as e:
         logging.debug(e)
 
     try:
-        with open(os.path.join(PARAM.PROXY_FOLDER, filename), 'w') as f:
+        with open(os.path.join(path, filename), 'w') as f:
             json.dump(proxy_dict, f)
     except Exception as e:
         logging.debug(e)

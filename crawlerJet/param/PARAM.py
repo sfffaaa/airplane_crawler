@@ -11,10 +11,13 @@ else:
     DAYS_PERIOD = 210
 #    raise IOError('Shouldn\'t use real db right now')
 
+# Must Exist
+MONGODB_INFO_FILENAME = 'mongo.json'
+EMAIL_CLIENT_SECRET_FILENAME = 'client_secret.json'
+
 DATA_ENTRY_DATE_FORMAT = '%Y/%m/%d %H:%M:%S'
 
 UPDATE_DATE_FORMAT = '%Y/%m/%d %H:%M:%S'
-MONGODB_INFO_FILENAME = 'etc/mongo.json'
 MONGODB_NOTIFIER_NAME = 'notifier'
 
 RETRY_SLEEP_TIMES = [0.5, 1, 2, 4, 8, 16, 32, 64, 128, 128, 128, 128]
@@ -26,5 +29,4 @@ LOGGING_SIZE = 10*1024*1024
 EMAIL_DATE_FORMAT = '%Y/%m/%d %H:%M:%S'
 EMAIL_FROM_ADDR = 'wacouyoyoyo@gmail.com'
 
-PROXY_FOLDER = 'proxy'
 PROXY_RETRY_TIMES = 3

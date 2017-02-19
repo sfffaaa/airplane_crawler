@@ -8,37 +8,47 @@ from oauth2client.client import flow_from_clientsecrets
 from oauth2client.file import Storage
 from oauth2client import tools
 import httplib2
+import sys
 
+try:
+    from param import PARAM
+except Exception as e:
+    sys.path.append(os.getcwd())
+    from param import PARAM
 
-def getResourcePath():
-    pathArr = list(os.path.split(os.getcwd()))
-    if 'mail' == pathArr[-1]:
-        pathArr = pathArr[:-1]
-    pathArr.append('etc')
-    return os.path.join(*pathArr)
+import logging
+from utils import pathUtils
+
+GMAIL_STORAGE_FILENAME = 'gmail.storage'
 
 
 def prepareGMAIL():
     parser = argparse.ArgumentParser(parents=[tools.argparser])
     flags = parser.parse_args()
-    path = getResourcePath()
+    path = pathUtils.GetGlobalConfigFolderPath()
     # Path to the client_secret.json file downloaded from the Developer Console
-    CLIENT_SECRET_FILE = os.path.join(path, 'client_secret.json')
+    client_secret_filepath = os.path.join(path, PARAM.EMAIL_CLIENT_SECRET_FILENAME)
 
     # Check https://developers.google.com/gmail/api/auth/scopes for all available scopes
-    OAUTH_SCOPE = 'https://www.googleapis.com/auth/gmail.compose'
+    oauth_scope = 'https://www.googleapis.com/auth/gmail.compose'
 
     # Location of the credentials storage file
-    STORAGE = Storage(os.path.join(path, 'gmail.storage'))
+    path = pathUtils.GetCrawlerTmpFolderPath()
+    try:
+        os.mkdir(path)
+    except Exception as e:
+        logging.debug(e)
+
+    storage = Storage(os.path.join(path, GMAIL_STORAGE_FILENAME))
 
     # Start the OAuth flow to retrieve credentials
-    flow = flow_from_clientsecrets(CLIENT_SECRET_FILE, scope=OAUTH_SCOPE)
+    flow = flow_from_clientsecrets(client_secret_filepath, scope=oauth_scope)
     http = httplib2.Http()
 
     # Try to retrieve credentials from storage or run the flow to generate them
-    credentials = STORAGE.get()
+    credentials = storage.get()
     if credentials is None or credentials.invalid:
-        credentials = tools.run_flow(flow, STORAGE, flags, http=http)
+        credentials = tools.run_flow(flow, storage, flags, http=http)
 
     # Authorize the httplib2.Http object with our credentials
     http = credentials.authorize(http)
