@@ -2,7 +2,7 @@
 #coding=utf-8
 import logging
 
-APP_TEST = 1
+APP_TEST = 0
 if APP_TEST:
     SKIP_TIME_PERIOD = 1
     DAYS_PERIOD = 5
