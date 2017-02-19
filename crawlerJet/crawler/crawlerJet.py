@@ -22,7 +22,7 @@ REQUEST_JET_MARKET_DAY = '%d'
 REQUEST_FLIGHT_CURRENCY = 'TWD'
 
 RAW_TIME_FORMAT = '%H:%M , %a, %b %d, %Y'
-STORE_TIME_FORMAT = '%Y/%m/%d %H:%M'
+STORE_TIME_FORMAT = '%Y/%m/%d %H:%M:%S'
 
 
 def _getAirLineResponse(date, origin, destination, proxy):
@@ -120,10 +120,10 @@ def _processAirLineResponse(targetDate, airlineResponse):
         flight_data = tr.select('dd.flight')
         # 0 --> from
         from_time = flight_data[0].contents[1].split(' - ')[0]
-        airline['departure_time'] = datetime.datetime.strptime(from_time, RAW_TIME_FORMAT).strftime(STORE_TIME_FORMAT)
+        airline['departure_time'] = datetime.datetime.strptime(from_time, RAW_TIME_FORMAT).strftime(PARAM.DATA_ENTRY_DATE_FORMAT)
         # 1 --> to
         to_time = flight_data[1].contents[1].split(' - ')[0]
-        airline['arrival_time'] = datetime.datetime.strptime(to_time, RAW_TIME_FORMAT).strftime(STORE_TIME_FORMAT)
+        airline['arrival_time'] = datetime.datetime.strptime(to_time, RAW_TIME_FORMAT).strftime(PARAM.DATA_ENTRY_DATE_FORMAT)
         # 3 --> type
         airline_type = tr.select('span.flight-no')[0].get_text()
         airline['air_number'] = airline_type
