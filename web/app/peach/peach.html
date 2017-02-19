@@ -1,0 +1,27 @@
+<div ng-show="initialLoading">
+  <span id="spinner" class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span> Loading...
+</div>
+<form role="form" class="form-horizontal">
+    <fieldset>
+      <div class="form-group">
+        <label class="col-sm-1 control-label">City</label>
+        <div class="col-sm-2">
+            <select class="form-control" ng-model="currentRouteData" ng-options="m for m in getAirRouteCity()" ng-change="updateRouteData()">
+              <option value=""> Please select City </option>
+            </select>
+        </div>
+        <label class="col-sm-1 control-label">UpdateTime</label>
+        <div class="col-sm-2">
+            <select class="form-control" ng-model="currentUpdateDate" ng-options="m for m in getUpdateTime()" ng-change="udpateUpdateDate()" ng-disabled='!currentRouteData'>
+            </select>
+        </div>
+      </div>
+    </fieldset>
+</form>
+
+  <div ng-show="loadingChart">
+    <span id="spinner" class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span> Loading chart ...
+  </div>
+  <wacou-linechart data="airPlaneMinData"></wacou-linechart>
+</div>
+

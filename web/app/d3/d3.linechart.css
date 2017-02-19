@@ -1,0 +1,48 @@
+path {
+    stroke: steelblue;
+    stroke-width: 2;
+    fill: none;
+}
+
+.axis path,
+.axis line {
+    fill: none;
+    stroke: grey;
+    stroke-width: 1;
+    shape-rendering: crispEdges;
+}
+
+#linechart-tooltip-id {
+    position: absolute;
+    text-align: left;
+    width: 220px;
+    height: 72px;
+    padding: 5px;
+    font: 14px sans-serif;
+    background: lightsteelblue;
+    border: 0px;
+    border-radius: 8px;
+    pointer-events: none;
+}
+
+#linechart-helper-id {
+	stroke: #ECA31E;
+	stroke-width: 3px;
+	opacity: 0.4;
+	stroke-dasharray: 3,3;
+}
+
+#linechart-yaxislabel-id {
+	text-anchor: middle;
+	font-size: 16px;
+}
+
+#linechart-nodatatext-id {
+	fill: steelblue;
+	font-size: 24px;
+	font-weight: bold;
+}
+
+#linechart-circle-id {
+	fill: lightsteelblue;
+}
