@@ -6,5 +6,13 @@ angular.module('peachApp', [
 	'peachApp.peach'
 ]).
 config(['$routeProvider', function($routeProvider) {
-	$routeProvider.otherwise({redirectTo: '/peach'});
+	$routeProvider.when('/peach', {
+		templateUrl: 'app/peach/peach.html',
+		controller: 'AircompanyCtrl'
+    }).when('/jet', {
+		templateUrl: 'app/peach/peach.html',
+		controller: 'AircompanyCtrl'
+	}).otherwise({
+        redirectTo: '/peach'
+    });
 }]);

@@ -48,8 +48,23 @@ app.get('/', function(req, res) {
 	res.sendFile('app/index.html', {root: __dirname});
 });
 
+DEFAULT_AIRCOMPANY = 'peach';
+
 app.post('/api/getAirRoute', function(req, res) {
-	var airRoute = new JetAirplane();
+    var airCompany = req.body.aircompany || DEFAULT_AIRCOMPANY;
+    console.log(LOG_ERR, req.body.aircompany);
+    console.log(LOG_ERR, airCompany);
+    var airRoute = null;
+    switch (airCompany) {
+        case 'peach':
+            airRoute = new PeachAirplane();
+            break;
+        case 'jet':
+            airRoute = new JetAirplane();
+            break;
+        default:
+            airRoute = new PeachAirplane();
+    }
 	airRoute.findAllRoute(function (err, route) {
 		if (err) {
 			console.log(LOG_ERR, err);
@@ -66,6 +81,7 @@ app.post('/api/getAirplane', function(req, res) {
 	var from = req.body.from;
 	var to = req.body.to;
 	var updateDate = req.body.date;
+    var airCompany = req.body.aircompany || DEFAULT_AIRCOMPANY;
 
 	if (null == from || null == to || null == updateDate) {
 		console.log(LOG_ERR, 'input param has empty');
@@ -78,7 +94,17 @@ app.post('/api/getAirplane', function(req, res) {
 		})
 		return;
 	}
-	var airplane = new JetAirplane({to: to, from: from, updateDate: updateDate});
+    var airplane = null;
+    switch (airCompany) {
+        case 'peach':
+            airplane = new PeachAirplane({to: to, from: from, updateDate: updateDate});
+            break;
+        case 'jet':
+            airplane = new JetAirplane({to: to, from: from, updateDate: updateDate});
+            break;
+        default:
+            airplane = new PeachAirplane({to: to, from: from, updateDate: updateDate});
+    }
 	airplane.findAirplaneData(function (err, data) {
 		if (err) {
 			console.log(LOG_ERR, err);

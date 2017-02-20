@@ -2,17 +2,11 @@
 
 angular.module('peachApp.peach', ['ngRoute', 'wacouLineChart'])
 
-.config(['$routeProvider', function($routeProvider) {
-	$routeProvider.when('/peach', {
-		templateUrl: 'app/peach/peach.html',
-		controller: 'PeachCtrl'
-	});
-}])
-
-.controller('PeachCtrl', ['$scope', '$http', '$log', '$q',
-	function($scope, $http, $log, $q) {
+.controller('AircompanyCtrl', ['$scope', '$http', '$log', '$q', '$location',
+	function($scope, $http, $log, $q, $location) {
 
 	var routeHash = {};
+    var airCompany = $location.path().substr(1);
 
 	$scope.initialLoading = true;
 
@@ -29,7 +23,6 @@ angular.module('peachApp.peach', ['ngRoute', 'wacouLineChart'])
 	}
 	$scope.udpateUpdateDate = function () {
 		var routeDetail = routeHash[$scope.currentRouteData][$scope.currentUpdateDate];
-
 		airPlaneDataMinGet(
 			routeDetail.to,
 			routeDetail.from,
@@ -53,7 +46,7 @@ angular.module('peachApp.peach', ['ngRoute', 'wacouLineChart'])
 	}
 
 	function initialize() {
-		_airRouteDataGet().then(function(data) {
+		_airRouteDataGet(airCompany).then(function(data) {
 			composeRouteHash(data);
 			$scope.initialLoading = false;
 		});
@@ -67,11 +60,14 @@ angular.module('peachApp.peach', ['ngRoute', 'wacouLineChart'])
 			routeHash[routeKey][element.updateDate] = element;
 		});
 	}
-	function _airRouteDataGet() {
+	function _airRouteDataGet(aircompany) {
 		var deferred = $q.defer();
 		$http({
 			method: 'post',
 			url: '/api/getAirRoute',
+			data: {
+                'aircompany': aircompany,
+            },
 			headers:{'Content-Type': 'application/json'}
 		}).success(function(req) {
 			if (true == req.success) {
@@ -89,6 +85,7 @@ angular.module('peachApp.peach', ['ngRoute', 'wacouLineChart'])
 	}
 	function airPlaneDataGet(to, from, date) {
 		_airPlaneDataGet({
+            'aircompany': aircompany,
 			'to': to,
 			'from': from,
 			'date': date
@@ -130,6 +127,7 @@ angular.module('peachApp.peach', ['ngRoute', 'wacouLineChart'])
 	}
 	function airPlaneDataMinGet(to, from, date) {
 		_airPlaneDataGet({
+            'aircompany': airCompany,
 			'to': to,
 			'from': from,
 			'date': date
@@ -145,6 +143,7 @@ angular.module('peachApp.peach', ['ngRoute', 'wacouLineChart'])
 			method: 'post',
 			url: '/api/getAirplane',
 			data: {
+                'aircompany': param.aircompany,
 				'to': param.to,
 				'from': param.from,
 				'date': param.date
