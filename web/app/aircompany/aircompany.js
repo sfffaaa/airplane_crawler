@@ -1,6 +1,6 @@
 'use strict';
 
-angular.module('peachApp.peach', ['ngRoute', 'wacouLineChart'])
+angular.module('aircompanyApp.aircompany', ['ngRoute', 'wacouLineChart'])
 
 .controller('AircompanyCtrl', ['$scope', '$http', '$log', '$q', '$location',
 	function($scope, $http, $log, $q, $location) {
