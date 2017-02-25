@@ -14,6 +14,25 @@ from crawler import crawlerNoProxy, crawlerProxy
 from notifier.notifierDB import NotifierDB
 
 
+def _isNeedCrawlThisTime(update_date, crawlerDBHandler, from_city, to_city):
+    list_data = crawlerDBHandler.list({
+        'from': from_city,
+        'to': to_city
+    }, {
+        'updateDate': 1,
+        '_id': 0
+    })
+    if 0 < len(list_data):
+        timediff = update_date - datetime.datetime.strptime(list_data[0]['updateDate'],
+                                                            PARAM.UPDATE_DATE_FORMAT)
+        if PARAM.SKIP_TIME_PERIOD > timediff.seconds:
+            logging.warning('{0} -> {1} no need to crawl because update time: {2} > {3}'.format(
+                from_city, to_city, PARAM.SKIP_TIME_PERIOD, timediff.seconds))
+            return False
+
+    return True
+
+
 def _startCrawl(update_date, aircompany_data_list, proxy_enable=True):
     for aircompany_dict in aircompany_data_list:
         aircompany_param = aircompany_dict['param_module']
@@ -24,21 +43,8 @@ def _startCrawl(update_date, aircompany_data_list, proxy_enable=True):
             to_city = city_pair[1]
 
             logging.warning('{0} -> {1} start crawling'.format(from_city, to_city))
-            list_data = crawlerDBHandler.list({
-                'from': from_city,
-                'to': to_city
-            }, {
-                'updateDate': 1,
-                '_id': 0
-            })
-
-            if 0 < len(list_data):
-                timediff = update_date - datetime.datetime.strptime(list_data[0]['updateDate'],
-                                                                    PARAM.UPDATE_DATE_FORMAT)
-                if PARAM.SKIP_TIME_PERIOD > timediff.seconds:
-                    logging.warning('{0} -> {1} skip because update time: {2} > {3}'.format(
-                        from_city, to_city, PARAM.SKIP_TIME_PERIOD, timediff.seconds))
-                    continue
+            if not _isNeedCrawlThisTime(update_date, crawlerDBHandler, from_city, to_city):
+                continue
             try:
                 if proxy_enable:
                     airline_data = crawlerProxy.CrawlCityAirlineData({
@@ -98,7 +104,7 @@ def _startNotifier(update_date, aircompany_data_list):
                     notifierMail.sendNotifierMail(update_date, person, city_pair, airplane_list)
 
 
-def runCrawl(aircompany_data_list, proxy_enable=True):
+def _runCrawl(aircompany_data_list, proxy_enable=True):
     try:
         update_date = datetime.datetime.now()
         _startCrawl(update_date, aircompany_data_list, proxy_enable)
@@ -121,7 +127,7 @@ if __name__ == '__main__':
     loggingUtils.setLogSetting(PARAM.LOGGING_LEVEL, PARAM.LOGGING_PATH, PARAM.UPDATE_DATE_FORMAT)
 
     logging.warning('------------ start --------------')
-    runCrawl([{
+    _runCrawl([{
         'param_module': JET,
         'crawler_module': crawlerJet
     }])
