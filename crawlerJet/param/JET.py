@@ -21,7 +21,6 @@ else:
     ]
     MONGODB_DATABASE_NAME = 'jet'
 
-CITY_LIST = ['DAD', 'TPE', 'SIN']
 MONGODB_COLLECTION_NAME = 'jet'
 
 # Self

@@ -113,13 +113,6 @@ def CrawlCityAirlineData(airplane_data, aircompany_dict):
 
     aircompany_param = aircompany_dict['param_module']
 
-    if from_city not in aircompany_param.CITY_LIST:
-        logging.error('Error: wrong origin city {0}'.format(from_city))
-        return
-    if to_city not in aircompany_param.CITY_LIST:
-        logging.error('Error: wrong destionation city {0}'.format(to_city))
-        return
-
     proxy_list = proxyUtils.GetHighProbabilityProxyList(aircompany_param.PROXY_HIGH_NAME)
     if not proxy_list:
         proxy_list = proxyUtils.GetAllProxyList()

@@ -89,13 +89,6 @@ def CrawlCityAirlineData(airplane_data, aircompany_dict):
 
     aircompany_param = aircompany_dict['param_module']
 
-    if from_city not in aircompany_param.CITY_LIST:
-        logging.error('Error: wrong origin city {0}'.format(from_city))
-        return
-    if to_city not in aircompany_param.CITY_LIST:
-        logging.error('Error: wrong destionation city {0}'.format(to_city))
-        return
-
     airline_data = []
     for day in range(PARAM.DAYS_PERIOD):
         for retry_idx, retry_time in enumerate(PARAM.RETRY_SLEEP_TIMES):
