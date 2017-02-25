@@ -5,6 +5,7 @@ angular.module('aircompanyApp.aircompany', ['ngRoute', 'wacouLineChart'])
 .controller('TabsCtrl', ['$scope', '$location',
     function($scope, $location) {
     $scope.tabs = [
+        { link: '#/help', label: 'Help', path: '/help' },
         { link: '#/peach', label: 'Peach', path: '/peach' },
         { link: '#/jet', label: 'Jet', path: '/jet' }
     ];

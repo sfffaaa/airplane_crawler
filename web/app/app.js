@@ -12,7 +12,9 @@ config(['$routeProvider', function($routeProvider) {
     }).when('/jet', {
 		templateUrl: 'app/aircompany/aircompany.html',
 		controller: 'AircompanyCtrl'
-	}).otherwise({
-        redirectTo: '/peach'
+	}).when('/help', {
+   		templateUrl: 'app/aircompany/help.html',
+    }).otherwise({
+        redirectTo: '/help'
     });
 }]);
