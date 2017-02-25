@@ -12,3 +12,21 @@
     from { transform: scale(1) rotate(0deg);}
     to { transform: scale(1) rotate(360deg);}
 }
+
+[ng\:cloak], [ng-cloak], [data-ng-cloak], [x-ng-cloak], .ng-cloak, .x-ng-cloak {
+  display: none !important;
+}
+
+.container>.nav>li>a:focus {
+    background-color:transparent;
+	text-decoration: none;
+}
+
+.container>.nav>li>a:hover {
+	text-decoration: none;
+	background-color: #eee;
+}
+
+.container>.nav>li>a {
+	color: #337ab7;
+}

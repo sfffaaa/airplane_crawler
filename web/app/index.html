@@ -13,14 +13,15 @@
   <link rel="stylesheet" href="bower_components/html5-boilerplate/dist/css/main.css">
   <link rel="stylesheet" href="app/app.css">
   <link rel="stylesheet" href="app/d3/d3.linechart.css">
-  <link rel="stylesheet" href="app/aircompany/aircompanyApp.css">
+  <link rel="stylesheet" href="app/aircompany/aircompany.css">
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
 </head>
 <body>
   <div class="container">
-    <ul class="nav nav-tabs">
-	  <li><a class="aircompany-tab" href="#/peach">Peach</a></li>
-	  <li><a class="aircompany-tab" href="#/jet">Jet</a></li>
+    <ul class="nav nav-tabs" ng-controller="TabsCtrl">
+      <li ng-class="tabClass(tab)" ng-repeat="tab in tabs" tab="tab" ng-cloak>
+        <a href="{{tab.link}}">{{tab.label}}</a>
+      </li>
     </ul>
 
   <!--[if lt IE 7]>

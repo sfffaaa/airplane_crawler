@@ -2,6 +2,34 @@
 
 angular.module('aircompanyApp.aircompany', ['ngRoute', 'wacouLineChart'])
 
+.controller('TabsCtrl', ['$scope', '$location',
+    function($scope, $location) {
+    $scope.tabs = [
+        { link: '#/peach', label: 'Peach', path: '/peach' },
+        { link: '#/jet', label: 'Jet', path: '/jet' }
+    ];
+    $scope.refreshSelectedTab = function() {
+		for (var i = 0; i < $scope.tabs.length; i++) {
+            if ($scope.tabs[i].path == $location.path()) {  
+                $scope.selectedTab = $scope.tabs[i];
+                return;
+            }
+        }
+        $scope.selectedTab = $scope.tabs[0];
+    }
+
+    $scope.tabClass = function(tab) {
+        if ($scope.selectedTab == tab) {
+            return "active";
+        } else {
+            return "";
+        }
+    }
+    $scope.$on('$routeChangeStart', function(next, current) {
+        $scope.refreshSelectedTab();
+    });
+}])
+
 .controller('AircompanyCtrl', ['$scope', '$http', '$log', '$q', '$location',
 	function($scope, $http, $log, $q, $location) {
 
