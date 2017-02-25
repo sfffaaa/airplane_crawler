@@ -4,128 +4,14 @@
 import sys
 import logging
 import datetime
-from param import PARAM, CRAWLER, JET
+from param import PARAM, JET
 from crawler import crawlerJet
 from utils import loggingUtils
 from mail import crawlerMail
 from mail import notifierMail
 from crawler.crawlerDB import CrawlerDB
+from crawler import crawlerNoProxy, crawlerProxy
 from notifier.notifierDB import NotifierDB
-from utils import proxyUtils
-import time
-
-
-def _crawlCityAirlineData(airplane_data, aircompany_dict, proxy_enable=False):
-    """
-        _crawlCityAirlineData({"update_date": dateData, "from": "TPE", "to": "DAD"},
-                              {"param_module": PARAM.JET, "crawler_module": crawlerJet},
-                              False)
-        {'to': 'DAD',
-         'from': 'TPE',
-         'updateDate': '2017/02/19 18:06:19',
-         'data': [{'date': '2017/02/20 18:06:19', 'status': 'ok', 'data': []},
-                  {'date': '2017/02/21 18:06:19', 'status': 'ok', 'data': [{
-                        'currency': 'TWD',
-                        'arrival_time':
-                        '2017/02/21 17:15',
-                        'air_number': u'BL  163',
-                        'departure_time': '2017/02/21 15:40',
-                        'money': 2800.0
-                   }]},
-                  {'date': '2017/02/22 18:06:19', 'status': 'ok', 'data': []},
-                  {'date': '2017/02/23 18:06:19', 'status': 'ok', 'data': []},
-                  {'date': '2017/02/24 18:06:19', 'status': 'ok', 'data': [{
-                        'currency': 'TWD',
-                        'arrival_time': '2017/02/24 17:15',
-                        'air_number': u'BL  163',
-                        'departure_time': '2017/02/24 15:40',
-                        'money': 9300.0
-                  }]}
-                 ]
-        }
-    """
-    update_date = airplane_data['updateDate']
-    from_city = airplane_data['from']
-    to_city = airplane_data['to']
-
-    aircompany_param = aircompany_dict['param_module']
-    aircompany_func = aircompany_dict['crawler_module']
-
-    if from_city not in aircompany_param.CITY_LIST:
-        logging.error('Error: wrong origin city {0}'.format(from_city))
-        return
-    if to_city not in aircompany_param.CITY_LIST:
-        logging.error('Error: wrong destionation city {0}'.format(to_city))
-        return
-
-    if proxy_enable:
-        proxy_list = proxyUtils.GetHighProbabilityProxyList(aircompany_param.PROXY_HIGH_NAME)
-        if not proxy_list:
-            proxy_list = proxyUtils.GetAllProxyList()
-        not_tested_proxy_list = [_ for _ in proxy_list]
-        processed_proxy_list = [_ for _ in proxy_list]
-
-    airline_data = []
-    proxy_retry_times = 0
-    for day in range(PARAM.DAYS_PERIOD):
-        for retry_idx, retry_time in enumerate(PARAM.RETRY_SLEEP_TIMES):
-            try:
-                time.sleep(retry_time)
-                airline_entry, del_proxy_idxs = aircompany_func.CrawlAirlineData({
-                    'updateDate': update_date,
-                    'day': day,
-                    'from': from_city,
-                    'to': to_city
-                }, {
-                    'enable': proxy_enable,
-                    'proxies': processed_proxy_list
-                })
-                if del_proxy_idxs:
-                    for del_idx in del_proxy_idxs:
-                        del processed_proxy_list[del_idx]
-
-                if 0 != len(not_tested_proxy_list):
-                    # Because processed_proxy_list[0] is using prox ok
-                    removed_proxy_set = set(proxy_list) - set(processed_proxy_list)
-                    not_tested_proxy_list = list(set(not_tested_proxy_list) - set(processed_proxy_list[:1]) - removed_proxy_set)
-                # rotate the success proxy one
-                processed_proxy_list.append(processed_proxy_list[0])
-                del processed_proxy_list[0]
-                break
-            except Exception as e:
-                logging.warning(e)
-
-                if 'high loadings' in str(e):
-                    raise Exception('High loadings occurs, we need try later')
-                elif retry_time == PARAM.RETRY_SLEEP_TIMES[-1]:
-                    logging.warning('Retry times({0}) is too many times, stop it!'.format(retry_idx))
-                    raise Exception('Retry too many times')
-                elif 'Proxy server list' in str(e):
-                    if PARAM.PROXY_RETRY_TIMES < proxy_retry_times:
-                        raise
-                    logging.warning('We find proxy service again')
-                    proxy_retry_times = proxy_retry_times + 1
-                    proxy_list = proxyUtils.GetAllProxyList()
-                    not_tested_proxy_list = [_ for _ in proxy_list]
-                    processed_proxy_list = [_ for _ in proxy_list]
-                else:
-                    logging.warning('We have exception now, {0}. Here is retry times {1}'.format(e, retry_idx))
-
-        airline_data.append(airline_entry)
-
-    logging.debug(airline_data)
-    if proxy_enable:
-        proxyUtils.UpdateHighProbabilityProxyList({
-                'success': list(set(processed_proxy_list) - set(not_tested_proxy_list)),
-                'failure': list(set(proxy_list) - set(processed_proxy_list)),
-            }, aircompany_param.PROXY_HIGH_NAME)
-
-    return {
-        'updateDate': update_date.strftime(PARAM.UPDATE_DATE_FORMAT),
-        'from': from_city,
-        'to': to_city,
-        'data': airline_data
-    }
 
 
 def _startCrawl(update_date, aircompany_data_list, proxy_enable=True):
@@ -154,11 +40,18 @@ def _startCrawl(update_date, aircompany_data_list, proxy_enable=True):
                         from_city, to_city, PARAM.SKIP_TIME_PERIOD, timediff.seconds))
                     continue
             try:
-                airline_data = _crawlCityAirlineData({
-                                'updateDate': update_date,
-                                'from': from_city,
-                                'to': to_city
-                              }, aircompany_dict, proxy_enable)
+                if proxy_enable:
+                    airline_data = crawlerProxy.CrawlCityAirlineData({
+                                    'updateDate': update_date,
+                                    'from': from_city,
+                                    'to': to_city
+                                  }, aircompany_dict)
+                else:
+                    airline_data = crawlerNoProxy.CrawlCityAirlineData({
+                                    'updateDate': update_date,
+                                    'from': from_city,
+                                    'to': to_city
+                                  }, aircompany_dict)
             except Exception as e:
                 raise e
 

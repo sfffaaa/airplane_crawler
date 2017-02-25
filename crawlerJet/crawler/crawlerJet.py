@@ -25,7 +25,7 @@ RAW_TIME_FORMAT = '%H:%M , %a, %b %d, %Y'
 STORE_TIME_FORMAT = '%Y/%m/%d %H:%M:%S'
 
 
-def _getAirLineResponse(date, origin, destination, proxy):
+def GetAirLineResponse(date, origin, destination, proxy):
 
     with requests.Session() as s:
         requestURL = 'https://booknow.jetstar.com'
@@ -101,7 +101,7 @@ def _getAirLineResponse(date, origin, destination, proxy):
         return r.text
 
 
-def _processAirLineResponse(targetDate, airlineResponse):
+def ProcessAirLineResponse(targetDate, airlineResponse):
     soup = BeautifulSoup(airlineResponse, 'html.parser')
 
     exists = soup.select('li.active a span')
@@ -194,7 +194,7 @@ def pickUsableProxies(country_raw_proxies):
     return [proxy for _, proxies in usable_country_proxies.items() for proxy in proxies][:8]
 
 
-def CrawlAirlineData(airplane_data, proxy_data):
+def _crawlAirlineData(airplane_data, proxy_data):
     """
         >>> CrawlAirlineData({"updateDate": update_date, "day": 1, "from": "TPE", "to": "DAD"},
                              {"enable": True, "proxies": ["1.1.1.1:80", "2.2.2.2:80"]})
@@ -223,14 +223,14 @@ def CrawlAirlineData(airplane_data, proxy_data):
     del_proxy_idxs = []
     if not proxy_data['enable']:
         # Without Proxy
-        airlineResponse = _getAirLineResponse(targetDate, from_city, to_city, {})
+        airlineResponse = GetAirLineResponse(targetDate, from_city, to_city, {})
     else:
         # With Proxy
         proxy_list = proxy_data['proxies']
         for idx, proxy in enumerate(proxy_list):
             try:
                 logging.warning('Use proxy {0}'.format(proxy))
-                airlineResponse = _getAirLineResponse(targetDate, from_city, to_city, {'https': proxy})
+                airlineResponse = GetAirLineResponse(targetDate, from_city, to_city, {'https': proxy})
                 break
             except Exception as e:
                 if 'Jet has high loadings, we need try later' in str(e):
@@ -253,10 +253,10 @@ def CrawlAirlineData(airplane_data, proxy_data):
         logging.error(airlineResponse)
         raise Exception('Jet has internal error, we need try later')
 
-    return _processAirLineResponse(targetDate, airlineResponse), del_proxy_idxs
+    return ProcessAirLineResponse(targetDate, airlineResponse), del_proxy_idxs
 
 
 if __name__ == '__main__':
     update_date = datetime.datetime.now()
-    print CrawlAirlineData({"updateDate": update_date, "day": 1, "from": "TPE", "to": "DAD"},
-                           {"enable": False, "proxies": []})
+    print _crawlAirlineData({"updateDate": update_date, "day": 1, "from": "TPE", "to": "DAD"},
+                            {"enable": False, "proxies": []})
