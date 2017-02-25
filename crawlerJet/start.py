@@ -4,7 +4,8 @@
 import sys
 import logging
 import datetime
-from param import PARAM, CRAWLER
+from param import PARAM, CRAWLER, JET
+from crawler import crawlerJet
 from utils import loggingUtils
 from mail import crawlerMail
 from mail import notifierMail
@@ -70,7 +71,7 @@ def _crawlCityAirlineData(airplane_data, aircompany_dict, proxy_enable=False):
         for retry_idx, retry_time in enumerate(PARAM.RETRY_SLEEP_TIMES):
             try:
                 time.sleep(retry_time)
-                airline_entry = aircompany_func.CrawlAirlineData({
+                airline_entry, del_proxy_idxs = aircompany_func.CrawlAirlineData({
                     'updateDate': update_date,
                     'day': day,
                     'from': from_city,
@@ -79,6 +80,10 @@ def _crawlCityAirlineData(airplane_data, aircompany_dict, proxy_enable=False):
                     'enable': proxy_enable,
                     'proxies': processed_proxy_list
                 })
+                if del_proxy_idxs:
+                    for del_idx in del_proxy_idxs:
+                        del processed_proxy_list[del_idx]
+
                 if 0 != len(not_tested_proxy_list):
                     # Because processed_proxy_list[0] is using prox ok
                     removed_proxy_set = set(proxy_list) - set(processed_proxy_list)
@@ -123,8 +128,8 @@ def _crawlCityAirlineData(airplane_data, aircompany_dict, proxy_enable=False):
     }
 
 
-def _startCrawl(update_date, proxy_enable=True):
-    for aircompany_dict in CRAWLER.TARGET_CRAWLER_INFO:
+def _startCrawl(update_date, aircompany_data_list, proxy_enable=True):
+    for aircompany_dict in aircompany_data_list:
         aircompany_param = aircompany_dict['param_module']
         crawlerDBHandler = CrawlerDB(aircompany_param.MONGODB_DATABASE_NAME,
                                      aircompany_param.MONGODB_COLLECTION_NAME)
@@ -173,8 +178,8 @@ def _shouldSendNotifierMail(person_data, crawler_data):
     return (0 != len(airplane_list), airplane_list)
 
 
-def _startNotifier(update_date):
-    for aircompany_dict in CRAWLER.TARGET_CRAWLER_INFO:
+def _startNotifier(update_date, aircompany_data_list):
+    for aircompany_dict in aircompany_data_list:
         aircompany_param = aircompany_dict['param_module']
         crawlerDBHandler = CrawlerDB(aircompany_param.MONGODB_DATABASE_NAME,
                                      aircompany_param.MONGODB_COLLECTION_NAME)
@@ -199,26 +204,32 @@ def _startNotifier(update_date):
                 if should_send:
                     notifierMail.sendNotifierMail(update_date, person, city_pair, airplane_list)
 
-if __name__ == '__main__':
-    loggingUtils.setLogSetting(PARAM.LOGGING_LEVEL, PARAM.LOGGING_PATH, PARAM.UPDATE_DATE_FORMAT)
 
-    logging.warning('------------ start --------------')
+def runCrawl(aircompany_data_list, proxy_enable=True):
     try:
         update_date = datetime.datetime.now()
-        _startCrawl(update_date)
+        _startCrawl(update_date, aircompany_data_list, proxy_enable)
     except Exception as e:
         crawlerMail.sendFailMail(update_date)
         logging.warning('Force exit because excption occur {0}'.format(e))
         sys.exit(1)
     else:
         # convert [[['TPE', 'SIN'], ...], [['TPE', 'KIX'], ...]] to [['TPE', 'SIN'], ..] and unique
-        city_list = [_['param_module'].CRAWLER_CITY_LIST for _ in CRAWLER.TARGET_CRAWLER_INFO]
+        city_list = [_['param_module'].CRAWLER_CITY_LIST for _ in aircompany_data_list]
         city_list = [tuple(city) for citys in city_list for city in citys]
         city_list = list(set(city_list))
         city_list = [list(_) for _ in city_list]
 
         crawlerMail.sendSuccessMail(update_date, city_list, PARAM.DAYS_PERIOD)
 
-    _startNotifier(update_date)
+    _startNotifier(update_date, aircompany_data_list)
 
+if __name__ == '__main__':
+    loggingUtils.setLogSetting(PARAM.LOGGING_LEVEL, PARAM.LOGGING_PATH, PARAM.UPDATE_DATE_FORMAT)
+
+    logging.warning('------------ start --------------')
+    runCrawl([{
+        'param_module': JET,
+        'crawler_module': crawlerJet
+    }])
     logging.warning('------------ end --------------')

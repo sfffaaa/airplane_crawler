@@ -207,7 +207,8 @@ def CrawlAirlineData(airplane_data, proxy_data):
             'air_number': u'BL  163',
             'departure_time': '2017/02/21 15:40',
             'money': 2800.0}
-         ]}
+         ]},
+        ["1.1.1.1:80"]
     """
 
     update_date = airplane_data['updateDate']
@@ -219,12 +220,12 @@ def CrawlAirlineData(airplane_data, proxy_data):
             targetDate.strftime(PARAM.DATA_ENTRY_DATE_FORMAT), from_city, to_city))
 
     airlineResponse = ''
+    del_proxy_idxs = []
     if not proxy_data['enable']:
         # Without Proxy
         airlineResponse = _getAirLineResponse(targetDate, from_city, to_city, {})
     else:
         # With Proxy
-        del_idxs = []
         proxy_list = proxy_data['proxies']
         for idx, proxy in enumerate(proxy_list):
             try:
@@ -236,14 +237,12 @@ def CrawlAirlineData(airplane_data, proxy_data):
                     raise Exception('Jet has high loadings, we need try later')
                 else:
                     logging.warning(e)
-                    del_idxs.append(idx)
+                    del_proxy_idxs.append(idx)
 
         # Delete the proxy server which cannot use
-        del_idxs.reverse()
-        for idx in del_idxs:
-            del proxy_list[idx]
+        del_proxy_idxs.reverse()
 
-        if 1 >= len(proxy_list):
+        if 1 >= len(proxy_list) - len(del_proxy_idxs):
             logging.error('Proxy server list remains : {0}'.format(proxy_list))
             raise Exception('Proxy server list remains only {0}'.format(proxy_list))
 
@@ -254,7 +253,7 @@ def CrawlAirlineData(airplane_data, proxy_data):
         logging.error(airlineResponse)
         raise Exception('Jet has internal error, we need try later')
 
-    return _processAirLineResponse(targetDate, airlineResponse)
+    return _processAirLineResponse(targetDate, airlineResponse), del_proxy_idxs
 
 
 if __name__ == '__main__':
