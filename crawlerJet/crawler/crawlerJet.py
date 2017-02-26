@@ -152,115 +152,12 @@ def ProcessAirLineResponse(crawler_info, airlineResponse):
     }
 
 
-def _testUsableProxy(raw_proxy):
-    with requests.Session() as s:
-        requestURL = 'https://booknow.jetstar.com'
-        s.mount(requestURL, httpsAdapter.ForceTLSV1Adapter())
-        header = {
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-            'Accept-Encoding': 'gzip, deflate, sdch, br',
-            'Accept-Language': 'zh-TW,zh;q=0.8,en-US;q=0.6,en;q=0.4',
-            'Cache-Control': 'no-cache',
-            'Connection': 'keep-alive',
-            'Host': 'booknow.jetstar.com',
-            'Pragma': 'no-cache',
-            'Upgrade-Insecure-Requests': 1,
-            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.95 Safari/537.36'
-        }
-        try:
-            logging.warning('Test raw_proxy {0}'.format(raw_proxy))
-            s.get('https://booknow.jetstar.com',
-                  headers=header,
-                  proxies={'https': raw_proxy},
-                  timeout=5)
-            logging.warning('Test raw_proxy {0} success'.format(raw_proxy))
-        except Exception as e:
-            logging.debug('Test raw_proxy {0} fail: {1}'.format(raw_proxy, e))
-            return False
-
-        return True
-
-
-def pickUsableProxies(country_raw_proxies):
-    """
-        >>> pickUsableProxies({"Taiwan": ["104.196.34.46:80", "128.199.229.21:3128"], "Signapore" ["104.196.34.46:80", "128.199.229.21:3128"]}
-        ["104.196.34.46:80", "104.196.34.46:80"]
-  )
-    """
-    usable_country_proxies = {}
-
-    for country, raw_proxies in country_raw_proxies.items():
-        usable_country_proxies[country] = [_ for _ in raw_proxies if _testUsableProxy(_)]
-
-    for country, proxy in usable_country_proxies.items():
-        logging.warning('{0} have {1} proxies'.format(country, len(proxy)))
-
-    return [proxy for _, proxies in usable_country_proxies.items() for proxy in proxies][:8]
-
-
-def _crawlAirlineData(airplane_data, proxy_data):
-    """
-        >>> CrawlAirlineData({"updateDate": update_date, "day": 1, "from": "TPE", "to": "DAD"},
-                             {"enable": True, "proxies": ["1.1.1.1:80", "2.2.2.2:80"]})
-        {'date': '2017/02/21 18:03:44',
-         'status': 'ok',
-         'data': [{
-            'currency': 'TWD',
-            'arrival_time':
-            '2017/02/21 17:15',
-            'air_number': u'BL  163',
-            'departure_time': '2017/02/21 15:40',
-            'money': 2800.0}
-         ]},
-        ["1.1.1.1:80"]
-    """
-
-    update_date = airplane_data['updateDate']
-    from_city = airplane_data['from']
-    to_city = airplane_data['to']
-
-    targetDate = update_date + datetime.timedelta(days=airplane_data['day'] + 1)
-    logging.warning('targetDate: {0}, origin city: {1}, dest city: {2}'.format(
-            targetDate.strftime(PARAM.DATA_ENTRY_DATE_FORMAT), from_city, to_city))
-
-    airlineResponse = ''
-    del_proxy_idxs = []
-    if not proxy_data['enable']:
-        # Without Proxy
-        airlineResponse = GetAirLineResponse(targetDate, from_city, to_city, {})
-    else:
-        # With Proxy
-        proxy_list = proxy_data['proxies']
-        for idx, proxy in enumerate(proxy_list):
-            try:
-                logging.warning('Use proxy {0}'.format(proxy))
-                airlineResponse = GetAirLineResponse(targetDate, from_city, to_city, {'https': proxy})
-                break
-            except Exception as e:
-                if 'Jet has high loadings, we need try later' in str(e):
-                    raise Exception('Jet has high loadings, we need try later')
-                else:
-                    logging.warning(e)
-                    del_proxy_idxs.append(idx)
-
-        # Delete the proxy server which cannot use
-        del_proxy_idxs.reverse()
-
-        if 1 >= len(proxy_list) - len(del_proxy_idxs):
-            logging.error('Proxy server list remains : {0}'.format(proxy_list))
-            raise Exception('Proxy server list remains only {0}'.format(proxy_list))
-
-    if 'Gateway Timeout' in airlineResponse:
-        logging.error('Proxy server should change')
-        raise Exception('Proxy server should change')
-    elif 'Internal Server' in airlineResponse:
-        logging.error(airlineResponse)
-        raise Exception('Jet has internal error, we need try later')
-
-    return ProcessAirLineResponse(targetDate, airlineResponse), del_proxy_idxs
-
-
 if __name__ == '__main__':
     update_date = datetime.datetime.now()
-    print _crawlAirlineData({"updateDate": update_date, "day": 1, "from": "TPE", "to": "DAD"},
-                            {"enable": False, "proxies": []})
+    from crawler.crawlerNoProxy import CrawlAirlineDataPerDay
+    from crawler.crawlerClass import AircompanyInfo, CrawlerInfo
+    from crawler import crawlerJet
+    from param import JET
+    print CrawlAirlineDataPerDay(AircompanyInfo("jet", JET, crawlerJet),
+                                 CrawlerInfo("TPE", "DAD", update_date),
+                                 1)

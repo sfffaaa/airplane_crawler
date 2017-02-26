@@ -71,12 +71,12 @@ class ProxyTestInfo():
             }, self.cache_filename)
 
 
-def _crawlAirlineDataPerDay(aircompany_info, crawler_info, day, proxy_tester):
+def CrawlAirlineDataPerDay(aircompany_info, crawler_info, day, proxy_tester):
     """
-        >>> _crawlAirlineDataPerDay(AircompanyInfo("jet", param.Jet, crawlerJet),
-                                    CrawlerInfo("TPE", "DAD", update_date),
-                                    1,
-                                    ["1.1.1.1:80", "2.2.2.2:80"])
+        >>> CrawlAirlineDataPerDay(AircompanyInfo("jet", param.Jet, crawlerJet),
+                                   CrawlerInfo("TPE", "DAD", update_date),
+                                   1,
+                                   ProxyTestInfo(aircompany_info.param.PROXY_HIGH_NAME))
         {'date': '2017/02/21 18:03:44',
          'status': 'ok',
          'data': [{
@@ -162,10 +162,10 @@ def CrawlCityAirlineData(aircompany_info, crawler_info):
         for retry_idx, retry_time in enumerate(PARAM.RETRY_SLEEP_TIMES):
             try:
                 time.sleep(retry_time)
-                airline_entry = _crawlAirlineDataPerDay(aircompany_info,
-                                                        crawler_info,
-                                                        day,
-                                                        proxy_tester)
+                airline_entry = CrawlAirlineDataPerDay(aircompany_info,
+                                                       crawler_info,
+                                                       day,
+                                                       proxy_tester)
 
                 proxy_tester.Refresh()
 

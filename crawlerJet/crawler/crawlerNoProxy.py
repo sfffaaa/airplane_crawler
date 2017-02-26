@@ -14,9 +14,9 @@ import logging
 from crawler.crawlerClass import CrawlerInfo
 
 
-def _crawlAirlineDataPerDay(aircompany_info, crawler_info, day):
+def CrawlAirlineDataPerDay(aircompany_info, crawler_info, day):
     """
-        >>> _crawlAirlineDataPerDay(AircompanyInfo("jet", param.Jet, crawlerJet),
+        >>> CrawlAirlineDataPerDay(AircompanyInfo("jet", param.Jet, crawlerJet),
                                     CrawlerInfo("TPE", "DAD", update_date), 1)
         {'date': '2017/02/21 18:03:44',
          'status': 'ok',
@@ -81,7 +81,7 @@ def CrawlCityAirlineData(aircompany_info, crawler_info):
         for retry_idx, retry_time in enumerate(PARAM.RETRY_SLEEP_TIMES):
             try:
                 time.sleep(retry_time)
-                airline_entry = _crawlAirlineDataPerDay(aircompany_info, crawler_info, day)
+                airline_entry = CrawlAirlineDataPerDay(aircompany_info, crawler_info, day)
                 break
             except Exception as e:
                 logging.warning(e)
