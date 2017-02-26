@@ -56,8 +56,6 @@ class ProxyTestInfo():
         self._refreshInterestedList()
 
     def IsProxyEnough(self):
-        print len(self.not_tested_proxy_set)
-        print len(self.success_proxy_set)
         if 1 >= len(self.not_tested_proxy_set) + len(self.success_proxy_set):
             logging.error('Proxy server list not tested len: {0}, success len: {1}'.format(
                           len(self.not_tested_proxy_set),
