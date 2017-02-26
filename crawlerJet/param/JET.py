@@ -17,7 +17,13 @@ else:
         ['TPE', 'DAD'],
         ['DAD', 'TPE'],
         ['TPE', 'SIN'],
-        ['SIN', 'TPE']
+        ['SIN', 'TPE'],
+        ['TPE', 'KIX'],
+        ['KIX', 'TPE'],
+        ['TPE', 'NRT'],
+        ['NRT', 'TPE'],
+        ['TPE', 'NGO'],
+        ['NGO', 'TPE']
     ]
     MONGODB_DATABASE_NAME = 'jet'
 
