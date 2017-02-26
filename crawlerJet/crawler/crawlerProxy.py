@@ -15,9 +15,9 @@ from utils import proxyUtils
 from crawler.crawlerClass import CrawlerInfo
 
 
-def _crawlAirlineDataPerDay(aircompany_dict, crawler_info, day, proxy_list):
+def _crawlAirlineDataPerDay(aircompany_info, crawler_info, day, proxy_list):
     """
-        >>> _crawlAirlineDataPerDay(JetModule,
+        >>> _crawlAirlineDataPerDay(AircompanyInfo("jet", param.Jet, crawlerJet),
                                     CrawlerInfo("TPE", "DAD", update_date),
                                     1,
                                     ["1.1.1.1:80", "2.2.2.2:80"])
@@ -34,7 +34,6 @@ def _crawlAirlineDataPerDay(aircompany_dict, crawler_info, day, proxy_list):
         ["1.1.1.1:80"]
     """
 
-    aircompany_func = aircompany_dict['crawler_module']
     target_crawler_info = CrawlerInfo(crawler_info.from_city,
                                       crawler_info.to_city,
                                       crawler_info.update_date + datetime.timedelta(days=day + 1))
@@ -46,8 +45,8 @@ def _crawlAirlineDataPerDay(aircompany_dict, crawler_info, day, proxy_list):
     for idx, proxy in enumerate(proxy_list):
         try:
             logging.warning('Use proxy {0}'.format(proxy))
-            airlineResponse = aircompany_func.GetAirLineResponse(target_crawler_info,
-                                                                 {'https': proxy})
+            airlineResponse = aircompany_info.module.GetAirLineResponse(target_crawler_info,
+                                                                        {'https': proxy})
             break
         except Exception as e:
             logging.warning('GetAirLineResponse fail!!!')
@@ -72,13 +71,13 @@ def _crawlAirlineDataPerDay(aircompany_dict, crawler_info, day, proxy_list):
         logging.error(airlineResponse)
         raise Exception('Jet has internal error, we need try later')
 
-    return aircompany_func.ProcessAirLineResponse(target_crawler_info, airlineResponse), del_proxy_idxs
+    return aircompany_info.module.ProcessAirLineResponse(target_crawler_info, airlineResponse), del_proxy_idxs
 
 
-def CrawlCityAirlineData(crawler_info, aircompany_dict):
+def CrawlCityAirlineData(aircompany_info, crawler_info):
     """
-        CrawlCityAirlineData(CrawlerInfo("TPE", "DAD", date_date),
-                             {"param_module": PARAM.JET, "crawler_module": crawlerJet})
+        CrawlCityAirlineData(AircompanyInfo("jet", param.Jet, crawlerJet),
+                             CrawlerInfo("TPE", "DAD", update_date))
         {'to': 'DAD',
          'from': 'TPE',
          'updateDate': '2017/02/19 18:06:19',
@@ -104,9 +103,7 @@ def CrawlCityAirlineData(crawler_info, aircompany_dict):
         }
     """
 
-    aircompany_param = aircompany_dict['param_module']
-
-    proxy_list = proxyUtils.GetHighProbabilityProxyList(aircompany_param.PROXY_HIGH_NAME)
+    proxy_list = proxyUtils.GetHighProbabilityProxyList(aircompany_info.param.PROXY_HIGH_NAME)
     if not proxy_list:
         proxy_list = proxyUtils.GetAllProxyList()
 
@@ -119,7 +116,7 @@ def CrawlCityAirlineData(crawler_info, aircompany_dict):
         for retry_idx, retry_time in enumerate(PARAM.RETRY_SLEEP_TIMES):
             try:
                 time.sleep(retry_time)
-                airline_entry, del_proxy_idxs = _crawlAirlineDataPerDay(aircompany_dict,
+                airline_entry, del_proxy_idxs = _crawlAirlineDataPerDay(aircompany_info,
                                                                         crawler_info,
                                                                         day,
                                                                         processed_proxy_list)
@@ -165,6 +162,6 @@ def CrawlCityAirlineData(crawler_info, aircompany_dict):
     proxyUtils.UpdateHighProbabilityProxyList({
             'success': list(set(processed_proxy_list) - set(not_tested_proxy_list)),
             'failure': list(set(proxy_list) - set(processed_proxy_list)),
-        }, aircompany_param.PROXY_HIGH_NAME)
+        }, aircompany_info.param.PROXY_HIGH_NAME)
 
     return airline_data

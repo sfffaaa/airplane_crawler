@@ -1,15 +1,14 @@
-from param import JET#, PEACH
+#!/usr/bin/env python
+# coding=utf-8
+
+from param import JET
 from crawler import crawlerJet
+from crawler.crawlerClass import AircompanyInfo
 
-#crawler_module:
-#   ProcessAirLineResponse(targetDate, airlineResponse):
+# crawler_module:
 #   GetAirLineResponse(date, origin, destination, proxy):
+#   ProcessAirLineResponse(targetDate, airlineResponse):
 
-TARGET_CRAWLER_INFO = [{
-    'param_module': JET,
-    'crawler_module': crawlerJet
-#}, {
-#    'param_module': PEACH,
-#    'crawler_func'
-}]
-
+TARGET_CRAWLER_INFO = [
+    AircompanyInfo('jet', JET, crawlerJet)
+]

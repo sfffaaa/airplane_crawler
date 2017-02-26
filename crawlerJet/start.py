@@ -11,7 +11,7 @@ from mail import crawlerMail
 from mail import notifierMail
 from crawler.crawlerDB import CrawlerDB
 from crawler import crawlerNoProxy, crawlerProxy
-from crawler.crawlerClass import CrawlerInfo
+from crawler.crawlerClass import CrawlerInfo, AircompanyInfo
 from notifier.notifierDB import NotifierDB
 
 
@@ -35,11 +35,10 @@ def _isNeedCrawlThisTime(crawler_info, crawlerDBHandler):
 
 
 def _startCrawl(update_date, aircompany_data_list, proxy_enable=True):
-    for aircompany_dict in aircompany_data_list:
-        aircompany_param = aircompany_dict['param_module']
-        crawlerDBHandler = CrawlerDB(aircompany_param.MONGODB_DATABASE_NAME,
-                                     aircompany_param.MONGODB_COLLECTION_NAME)
-        for city_pair in aircompany_param.CRAWLER_CITY_LIST:
+    for aircompany_info in aircompany_data_list:
+        crawlerDBHandler = CrawlerDB(aircompany_info.param.MONGODB_DATABASE_NAME,
+                                     aircompany_info.param.MONGODB_COLLECTION_NAME)
+        for city_pair in aircompany_info.param.CRAWLER_CITY_LIST:
             crawler_info = CrawlerInfo(city_pair[0], city_pair[1], update_date)
 
             logging.warning('{0}: start crawling'.format(crawler_info))
@@ -47,9 +46,9 @@ def _startCrawl(update_date, aircompany_data_list, proxy_enable=True):
                 continue
             try:
                 if proxy_enable:
-                    airline_data = crawlerProxy.CrawlCityAirlineData(crawler_info, aircompany_dict)
+                    airline_data = crawlerProxy.CrawlCityAirlineData(aircompany_info, crawler_info)
                 else:
-                    airline_data = crawlerNoProxy.CrawlCityAirlineData(crawler_info, aircompany_dict)
+                    airline_data = crawlerNoProxy.CrawlCityAirlineData(aircompany_info, crawler_info)
             except Exception as e:
                 raise e
 
@@ -70,13 +69,12 @@ def _shouldSendNotifierMail(person_data, crawler_data):
 
 
 def _startNotifier(update_date, aircompany_data_list):
-    for aircompany_dict in aircompany_data_list:
-        aircompany_param = aircompany_dict['param_module']
-        crawlerDBHandler = CrawlerDB(aircompany_param.MONGODB_DATABASE_NAME,
-                                     aircompany_param.MONGODB_COLLECTION_NAME)
-        notifierDBHandler = NotifierDB(aircompany_param.MONGODB_DATABASE_NAME,
+    for aircompany_info in aircompany_data_list:
+        crawlerDBHandler = CrawlerDB(aircompany_info.param.MONGODB_DATABASE_NAME,
+                                     aircompany_info.param.MONGODB_COLLECTION_NAME)
+        notifierDBHandler = NotifierDB(aircompany_info.param.MONGODB_DATABASE_NAME,
                                        PARAM.MONGODB_NOTIFIER_NAME)
-        for city_pair in aircompany_param.CRAWLER_CITY_LIST:
+        for city_pair in aircompany_info.param.CRAWLER_CITY_LIST:
             crawler_info = CrawlerInfo(city_pair[0], city_pair[1], update_date)
 
             data_list = crawlerDBHandler.listWithUpdateDate(crawler_info, limit=1)
@@ -98,7 +96,7 @@ def _runCrawl(aircompany_data_list, proxy_enable=True):
         sys.exit(1)
     else:
         # convert [[['TPE', 'SIN'], ...], [['TPE', 'KIX'], ...]] to [['TPE', 'SIN'], ..] and unique
-        city_list = [_['param_module'].CRAWLER_CITY_LIST for _ in aircompany_data_list]
+        city_list = [_.param.CRAWLER_CITY_LIST for _ in aircompany_data_list]
         city_list = [tuple(city) for citys in city_list for city in citys]
         city_list = list(set(city_list))
         city_list = [list(_) for _ in city_list]
@@ -111,8 +109,5 @@ if __name__ == '__main__':
     loggingUtils.setLogSetting(PARAM.LOGGING_LEVEL, PARAM.LOGGING_PATH, PARAM.UPDATE_DATE_FORMAT)
 
     logging.warning('------------ start --------------')
-    _runCrawl([{
-        'param_module': JET,
-        'crawler_module': crawlerJet
-    }])
+    _runCrawl([AircompanyInfo('jet', JET, crawlerJet)], False)
     logging.warning('------------ end --------------')
