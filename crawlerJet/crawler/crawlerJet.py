@@ -25,7 +25,10 @@ RAW_TIME_FORMAT = '%H:%M , %a, %b %d, %Y'
 STORE_TIME_FORMAT = '%Y/%m/%d %H:%M:%S'
 
 
-def GetAirLineResponse(date, origin, destination, proxy):
+def GetAirLineResponse(crawler_info, proxy={}):
+    date = crawler_info.update_date
+    origin = crawler_info.from_city
+    destination = crawler_info.to_city
 
     with requests.Session() as s:
         requestURL = 'https://booknow.jetstar.com'
@@ -101,7 +104,8 @@ def GetAirLineResponse(date, origin, destination, proxy):
         return r.text
 
 
-def ProcessAirLineResponse(targetDate, airlineResponse):
+def ProcessAirLineResponse(crawler_info, airlineResponse):
+    targetDate = crawler_info.update_date
     soup = BeautifulSoup(airlineResponse, 'html.parser')
 
     exists = soup.select('li.active a span')

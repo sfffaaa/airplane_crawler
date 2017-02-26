@@ -11,23 +11,27 @@ from mail import crawlerMail
 from mail import notifierMail
 from crawler.crawlerDB import CrawlerDB
 from crawler import crawlerNoProxy, crawlerProxy
+from crawler.crawlerClass import CrawlerInfo
 from notifier.notifierDB import NotifierDB
 
 
-def _isNeedCrawlThisTime(update_date, crawlerDBHandler, from_city, to_city):
+def _isNeedCrawlThisTime(crawler_info, crawlerDBHandler):
     list_data = crawlerDBHandler.list({
-        'from': from_city,
-        'to': to_city
+        'from': crawler_info.from_city,
+        'to': crawler_info.to_city
     }, {
         'updateDate': 1,
         '_id': 0
     })
     if 0 < len(list_data):
-        timediff = update_date - datetime.datetime.strptime(list_data[0]['updateDate'],
-                                                            PARAM.UPDATE_DATE_FORMAT)
+        timediff = crawler_info.update_date - datetime.datetime.strptime(list_data[0]['updateDate'],
+                                                                         PARAM.UPDATE_DATE_FORMAT)
         if PARAM.SKIP_TIME_PERIOD > timediff.seconds:
             logging.warning('{0} -> {1} no need to crawl because update time: {2} > {3}'.format(
-                from_city, to_city, PARAM.SKIP_TIME_PERIOD, timediff.seconds))
+                crawler_info.from_city,
+                crawler_info.to_city,
+                PARAM.SKIP_TIME_PERIOD,
+                timediff.seconds))
             return False
 
     return True
@@ -39,30 +43,21 @@ def _startCrawl(update_date, aircompany_data_list, proxy_enable=True):
         crawlerDBHandler = CrawlerDB(aircompany_param.MONGODB_DATABASE_NAME,
                                      aircompany_param.MONGODB_COLLECTION_NAME)
         for city_pair in aircompany_param.CRAWLER_CITY_LIST:
-            from_city = city_pair[0]
-            to_city = city_pair[1]
+            crawler_info = CrawlerInfo(city_pair[0], city_pair[1], update_date)
 
-            logging.warning('{0} -> {1} start crawling'.format(from_city, to_city))
-            if not _isNeedCrawlThisTime(update_date, crawlerDBHandler, from_city, to_city):
+            logging.warning('{0}: start crawling'.format(crawler_info))
+            if not _isNeedCrawlThisTime(crawler_info, crawlerDBHandler):
                 continue
             try:
                 if proxy_enable:
-                    airline_data = crawlerProxy.CrawlCityAirlineData({
-                                    'updateDate': update_date,
-                                    'from': from_city,
-                                    'to': to_city
-                                  }, aircompany_dict)
+                    airline_data = crawlerProxy.CrawlCityAirlineData(crawler_info, aircompany_dict)
                 else:
-                    airline_data = crawlerNoProxy.CrawlCityAirlineData({
-                                    'updateDate': update_date,
-                                    'from': from_city,
-                                    'to': to_city
-                                  }, aircompany_dict)
+                    airline_data = crawlerNoProxy.CrawlCityAirlineData(crawler_info, aircompany_dict)
             except Exception as e:
                 raise e
 
-            crawlerDBHandler.add(airline_data)
-            logging.warning('{0} -> {1} finish crawling'.format(from_city, to_city))
+            crawlerDBHandler.add(crawler_info, airline_data)
+            logging.warning('{0}: finish crawling'.format(crawler_info))
 
 
 # return (True/False, airplane_data)
@@ -85,23 +80,19 @@ def _startNotifier(update_date, aircompany_data_list):
         notifierDBHandler = NotifierDB(aircompany_param.MONGODB_DATABASE_NAME,
                                        PARAM.MONGODB_NOTIFIER_NAME)
         for city_pair in aircompany_param.CRAWLER_CITY_LIST:
-            from_city = city_pair[0]
-            to_city = city_pair[1]
+            crawler_info = CrawlerInfo(city_pair[0], city_pair[1], update_date)
 
             data_list = crawlerDBHandler.list({
-                'from': from_city,
-                'to': to_city,
-                'updateDate': update_date.strftime(PARAM.UPDATE_DATE_FORMAT)
+                'from': crawler_info.from_city,
+                'to': crawler_info.to_city,
+                'updateDate': crawler_info.update_date.strftime(PARAM.UPDATE_DATE_FORMAT)
             }, limit=1)
+            email_list = notifierDBHandler.list(crawler_info)
 
-            email_list = notifierDBHandler.list({
-                'from': from_city,
-                'to': to_city
-            })
             for person in email_list:
                 should_send, airplane_list = _shouldSendNotifierMail(person, data_list[0])
                 if should_send:
-                    notifierMail.sendNotifierMail(update_date, person, city_pair, airplane_list)
+                    notifierMail.sendNotifierMail(person, crawler_info, airplane_list)
 
 
 def _runCrawl(aircompany_data_list, proxy_enable=True):

@@ -11,17 +11,12 @@ except Exception as e:
     sys.path.append(os.getcwd())
     from param import PARAM
 import logging
+from crawler.crawlerClass import CrawlerInfo
 
 
-def _crawlAirlineDataPerDay(aircompany_dict, airplane_data):
+def _crawlAirlineDataPerDay(aircompany_dict, crawler_info, day):
     """
-        >>> _crawlAirlineDataPerDay(JetModule,
-            {
-                "updateDate": update_date,
-                "day": 1,
-                "from": "TPE",
-                "to": "DAD"
-            })
+        >>> _crawlAirlineDataPerDay(JetModule, CrawlerInfo("TPE", "DAD", update_date), 1)
         {'date': '2017/02/21 18:03:44',
          'status': 'ok',
          'data': [{
@@ -35,15 +30,13 @@ def _crawlAirlineDataPerDay(aircompany_dict, airplane_data):
     """
 
     aircompany_func = aircompany_dict['crawler_module']
-    update_date = airplane_data['updateDate']
-    from_city = airplane_data['from']
-    to_city = airplane_data['to']
+    target_crawler_info = CrawlerInfo(crawler_info.from_city,
+                                      crawler_info.to_city,
+                                      crawler_info.update_date + datetime.timedelta(days=day + 1))
 
-    targetDate = update_date + datetime.timedelta(days=airplane_data['day'] + 1)
-    logging.warning('targetDate: {0}, origin city: {1}, dest city: {2} without proxy'.format(
-            targetDate.strftime(PARAM.DATA_ENTRY_DATE_FORMAT), from_city, to_city))
+    logging.warning('Without proxy: {0}'.format(target_crawler_info))
 
-    airlineResponse = aircompany_func.GetAirLineResponse(targetDate, from_city, to_city, {})
+    airlineResponse = aircompany_func.GetAirLineResponse(target_crawler_info)
 
     if 'Gateway Timeout' in airlineResponse:
         logging.error('Proxy server should change')
@@ -52,12 +45,12 @@ def _crawlAirlineDataPerDay(aircompany_dict, airplane_data):
         logging.error(airlineResponse)
         raise Exception('Jet has internal error, we need try later')
 
-    return aircompany_func.ProcessAirLineResponse(targetDate, airlineResponse)
+    return aircompany_func.ProcessAirLineResponse(target_crawler_info, airlineResponse)
 
 
-def CrawlCityAirlineData(airplane_data, aircompany_dict):
+def CrawlCityAirlineData(crawler_info, aircompany_dict):
     """
-        CrawlCityAirlineData({"update_date": dateData, "from": "TPE", "to": "DAD"},
+        CrawlCityAirlineData(CrawlerInfo("TPE", "DAD", update_date),
                               {"param_module": PARAM.JET, "crawler_module": crawlerJet})
         {'to': 'DAD',
          'from': 'TPE',
@@ -83,10 +76,6 @@ def CrawlCityAirlineData(airplane_data, aircompany_dict):
                  ]
         }
     """
-    update_date = airplane_data['updateDate']
-    from_city = airplane_data['from']
-    to_city = airplane_data['to']
-
     aircompany_param = aircompany_dict['param_module']
 
     airline_data = []
@@ -94,12 +83,7 @@ def CrawlCityAirlineData(airplane_data, aircompany_dict):
         for retry_idx, retry_time in enumerate(PARAM.RETRY_SLEEP_TIMES):
             try:
                 time.sleep(retry_time)
-                airline_entry = _crawlAirlineDataPerDay(aircompany_dict, {
-                    'updateDate': update_date,
-                    'day': day,
-                    'from': from_city,
-                    'to': to_city
-                })
+                airline_entry = _crawlAirlineDataPerDay(aircompany_dict, crawler_info, day)
                 break
             except Exception as e:
                 logging.warning(e)
@@ -115,9 +99,4 @@ def CrawlCityAirlineData(airplane_data, aircompany_dict):
         airline_data.append(airline_entry)
 
     logging.debug(airline_data)
-    return {
-        'updateDate': update_date.strftime(PARAM.UPDATE_DATE_FORMAT),
-        'from': from_city,
-        'to': to_city,
-        'data': airline_data
-    }
+    return airline_data

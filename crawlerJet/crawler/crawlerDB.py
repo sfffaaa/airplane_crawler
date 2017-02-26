@@ -64,6 +64,12 @@ class CrawlerDB:
             ])
         return [data for data in cursor]
 
-    def add(self, data):
-        result = self.collection.save(data)
+    def add(self, crawler_info, airline_data):
+
+        result = self.collection.save({
+            'updateDate': crawler_info.update_date.strftime(PARAM.UPDATE_DATE_FORMAT),
+            'from': crawler_info.from_city,
+            'to': crawler_info.to_city,
+            'data': airline_data
+        })
         return [{'_id': result}]

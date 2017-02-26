@@ -99,10 +99,17 @@ class NotifierDB:
                 retList.append(_[0]['_id'])
         return retList
 
-    def list(self, filters={}, condition={}, skip=0, limit=0):
+    def list(self, crawler_info, filters={}, condition={}, skip=0, limit=0):
+        filter_crawler = {
+            'from': crawler_info.from_city,
+            'to': crawler_info.to_city
+        }
+        for k, v in filters:
+            filter_crawler[k] = v
+
         if len(condition):
             cursor = self.collection.find(
-                filters,
+                filter_crawler,
                 condition,
                 skip=skip,
                 limit=limit,
