@@ -44,10 +44,18 @@ class CrawlerDB:
     def edit(self, entryList):
         raise IOError('Not implement')
 
-    def list(self, filters={}, condition={}, skip=0, limit=0):
+    def listWithUpdateDate(self, crawler_info, filters={}, condition={}, skip=0, limit=0):
+        crawler_filters = {
+            'from': crawler_info.from_city,
+            'to': crawler_info.to_city,
+            'updateDate': crawler_info.update_date.strftime(PARAM.UPDATE_DATE_FORMAT)
+        }
+        for k, v in filters.items():
+            crawler_filters[k] = v
+
         if len(condition):
             cursor = self.collection.find(
-                filters,
+                crawler_filters,
                 condition,
                 skip=skip,
                 limit=limit,
@@ -56,7 +64,34 @@ class CrawlerDB:
             ])
         else:
             cursor = self.collection.find(
-                filters,
+                crawler_filters,
+                skip=skip,
+                limit=limit,
+            ).sort([
+                ('updateDate', pymongo.DESCENDING)
+            ])
+        return [data for data in cursor]
+
+    def list(self, crawler_info, filters={}, condition={}, skip=0, limit=0):
+        crawler_filters = {
+            'from': crawler_info.from_city,
+            'to': crawler_info.to_city
+        }
+        for k, v in filters.items():
+            crawler_filters[k] = v
+
+        if len(condition):
+            cursor = self.collection.find(
+                crawler_filters,
+                condition,
+                skip=skip,
+                limit=limit,
+            ).sort([
+                ('updateDate', pymongo.DESCENDING)
+            ])
+        else:
+            cursor = self.collection.find(
+                crawler_filters,
                 skip=skip,
                 limit=limit,
             ).sort([

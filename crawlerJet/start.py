@@ -16,10 +16,7 @@ from notifier.notifierDB import NotifierDB
 
 
 def _isNeedCrawlThisTime(crawler_info, crawlerDBHandler):
-    list_data = crawlerDBHandler.list({
-        'from': crawler_info.from_city,
-        'to': crawler_info.to_city
-    }, {
+    list_data = crawlerDBHandler.list(crawler_info, {
         'updateDate': 1,
         '_id': 0
     })
@@ -82,11 +79,7 @@ def _startNotifier(update_date, aircompany_data_list):
         for city_pair in aircompany_param.CRAWLER_CITY_LIST:
             crawler_info = CrawlerInfo(city_pair[0], city_pair[1], update_date)
 
-            data_list = crawlerDBHandler.list({
-                'from': crawler_info.from_city,
-                'to': crawler_info.to_city,
-                'updateDate': crawler_info.update_date.strftime(PARAM.UPDATE_DATE_FORMAT)
-            }, limit=1)
+            data_list = crawlerDBHandler.listWithUpdateDate(crawler_info, limit=1)
             email_list = notifierDBHandler.list(crawler_info)
 
             for person in email_list:
