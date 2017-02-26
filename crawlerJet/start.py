@@ -109,5 +109,5 @@ if __name__ == '__main__':
     loggingUtils.setLogSetting(PARAM.LOGGING_LEVEL, PARAM.LOGGING_PATH, PARAM.UPDATE_DATE_FORMAT)
 
     logging.warning('------------ start --------------')
-    _runCrawl([AircompanyInfo('jet', JET, crawlerJet)], False)
+    _runCrawl([AircompanyInfo('jet', JET, crawlerJet)])
     logging.warning('------------ end --------------')
