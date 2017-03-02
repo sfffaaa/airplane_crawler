@@ -5,6 +5,7 @@ import logging
 import sys
 import requests
 import datetime
+import eventlet
 import os
 from bs4 import BeautifulSoup
 
@@ -23,6 +24,8 @@ REQUEST_FLIGHT_CURRENCY = 'TWD'
 
 RAW_TIME_FORMAT = '%H:%M , %a, %b %d, %Y'
 STORE_TIME_FORMAT = '%Y/%m/%d %H:%M:%S'
+
+eventlet.monkey_patch()
 
 
 def GetAirLineResponse(crawler_info, proxy={}):
@@ -44,10 +47,14 @@ def GetAirLineResponse(crawler_info, proxy={}):
             'Upgrade-Insecure-Requests': 1,
             'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.95 Safari/537.36'
         }
-        s.get('https://booknow.jetstar.com',
-              headers=header,
-              timeout=5,
-              proxies=proxy)
+        r = None
+        with eventlet.Timeout(60, False):
+            r = s.get('https://booknow.jetstar.com',
+                      headers=header,
+                      timeout=5,
+                      proxies=proxy)
+        if r is None:
+            raise IOError('Timeout occurs')
 
         header = {
             'Host': 'booknow.jetstar.com',
@@ -94,14 +101,18 @@ def GetAirLineResponse(crawler_info, proxy={}):
             'sLkmnwXwAsY=': 'sLkmnwXwAsY=',
             'locale': 'zh-TW',
         }
-        r = s.post('https://booknow.jetstar.com/Select.aspx',
-                   headers=header,
-                   data=formdata,
-                   params=payload,
-                   proxies=proxy,
-                   timeout=40)
-
-        return r.text
+        r = None
+        with eventlet.Timeout(60, False):
+            r = s.post('https://booknow.jetstar.com/Select.aspx',
+                       headers=header,
+                       data=formdata,
+                       params=payload,
+                       proxies=proxy,
+                       timeout=40)
+        if r is None:
+            raise IOError('Timout occurs')
+        else:
+            return r.text
 
 
 def ProcessAirLineResponse(crawler_info, airlineResponse):
