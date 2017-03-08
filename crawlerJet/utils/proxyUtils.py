@@ -20,10 +20,10 @@ DEFAULT_WEIGHT_VALUE = 3
 
 COUNTRY_LIST = ['Taiwan',
                 'Singapore',
-                # 'Hong%20Kong',
-                # 'China',
+                'Hong%20Kong',
+                'China',
                 'United%20States',
-                # 'Japan'
+                'Japan'
                 ]
 
 
